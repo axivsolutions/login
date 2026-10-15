@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f2ed">
+  <title>台中吃什麼｜口袋地圖</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://api.maptiler.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202d2a;
+      --muted: #64716c;
+      --paper: #f3f2ed;
+      --surface: #fffefa;
+      --line: #d9ded7;
+      --green: #235d4f;
+      --green-light: #e5eee8;
+      --coral: #bd5036;
+      --yellow: #e9bd59;
+      --shadow: 0 12px 30px rgba(37, 56, 48, .08);
+      font-family: "Avenir Next", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background-color: var(--paper); background-image: radial-gradient(#d5d8ce 0.7px, transparent 0.7px); background-size: 16px 16px; }
+    button, input, select { font: inherit; }
+    button, a, select { -webkit-tap-highlight-color: transparent; }
+    .app { width: min(1500px, 100%); min-height: 100vh; margin: auto; padding: 24px clamp(16px, 3vw, 44px) 32px; }
+    header { display: flex; justify-content: space-between; align-items: end; gap: 20px; padding: 6px 0 22px; border-bottom: 1px solid var(--line); }
+    .eyebrow { margin: 0 0 7px; color: var(--coral); font-size: 11px; font-weight: 800; letter-spacing: 1.6px; text-transform: uppercase; }
+    h1 { margin: 0; font-family: "Iowan Old Style", "Noto Serif TC", "PMingLiU", serif; font-size: clamp(28px, 4vw, 42px); font-weight: 700; line-height: 1.1; }
+    .subtitle { margin: 9px 0 0; color: var(--muted); font-size: 14px; }
+    .total { flex: 0 0 auto; display: flex; align-items: baseline; gap: 8px; padding: 10px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--green); font-size: 13px; font-weight: 700; }
+    .total strong { font-family: Georgia, serif; font-size: 25px; }
+    .toolbar { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(145px, 220px) minmax(145px, 190px); gap: 10px; padding: 16px 0; }
+    .field { position: relative; }
+    .field input, .field select { width: 100%; height: 44px; border: 1px solid var(--line); border-radius: 3px; outline: 0; background: var(--surface); color: var(--ink); padding: 0 13px; }
+    .field input:focus, .field select:focus { border-color: var(--green); box-shadow: 0 0 0 2px rgba(35,93,79,.12); }
+    .add-trigger, .form-actions button { min-height: 36px; padding: 7px 11px; border: 1px solid var(--green); background: var(--green); color: white; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .add-trigger:hover, .form-actions button:hover { background: #174638; }
+    .list-heading { flex-wrap: wrap; }
+    .add-trigger { margin-left: auto; }
+    .add-form { padding: 14px 16px; border-bottom: 1px solid var(--line); background: #f5f7f1; }
+    .add-form[hidden] { display: none; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-field { display: grid; gap: 5px; color: var(--muted); font-size: 11px; font-weight: 700; }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; min-width: 0; min-height: 38px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 2px; outline: 0; background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 400; }
+    .form-field textarea { min-height: 58px; resize: vertical; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--green); }
+    .form-wide { grid-column: 1 / -1; }
+    .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+    .form-actions p { flex: 1 1 180px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .form-actions button[type="button"] { border-color: #9eaaa1; background: transparent; color: var(--ink); }
+    .form-actions button:disabled { border-color: #b8c1ba; background: #b8c1ba; cursor: not-allowed; }
+    .map-picking #map { cursor: crosshair; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr); gap: 16px; min-height: 610px; height: calc(100vh - 222px); max-height: 850px; }
+    .map-panel, .list-panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+    .map-panel { position: relative; }
+    #map { width: 100%; height: 100%; min-height: 420px; background: #e6e8df; }
+    .map-note { position: absolute; z-index: 500; left: 12px; bottom: 12px; max-width: min(390px, calc(100% - 24px)); padding: 8px 10px; border: 1px solid rgba(32,45,42,.16); background: rgba(255,254,250,.94); color: #46534e; font-size: 11px; line-height: 1.45; }
+    .list-panel { display: flex; flex-direction: column; }
+    .list-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+    .list-heading h2 { margin: 0; font-family: "Iowan Old Style", "Noto Serif TC", "PMingLiU", serif; font-size: 20px; }
+    .list-heading span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+    #results { min-height: 0; overflow: auto; padding: 0 16px 16px; scrollbar-color: #c6cec6 transparent; scrollbar-width: thin; }
+    .entry { position: relative; padding: 16px 2px 15px 15px; border-bottom: 1px solid var(--line); transition: background-color .2s ease; }
+    .entry::before { position: absolute; top: 18px; bottom: 16px; left: 0; width: 3px; background: var(--green); content: ""; }
+    .entry.event::before { background: var(--coral); }
+    .entry:hover, .entry.active { background: #f5f7f1; }
+    .entry-top { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+    .entry h3 { margin: 0; font-size: 16px; line-height: 1.4; }
+    .tag { flex: 0 0 auto; padding: 3px 7px; background: var(--green-light); color: var(--green); font-size: 10px; font-weight: 700; }
+    .event .tag { background: #f7e8df; color: #94422e; }
+    .food { margin: 7px 0 0; color: #394741; font-size: 13px; line-height: 1.55; }
+    .details { display: grid; gap: 4px; margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .details p { margin: 0; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 11px; }
+    .actions a { display: inline-flex; align-items: center; min-height: 30px; padding: 5px 9px; border: 1px solid #b9c7bc; color: var(--green); font-size: 11px; font-weight: 700; text-decoration: none; }
+    .actions a:hover { background: var(--green); color: white; }
+    .actions button.delete-place { min-height: 30px; padding: 5px 9px; border: 1px solid #d3b8ae; background: transparent; color: #94422e; font-size: 11px; cursor: pointer; }
+    .actions button.delete-place:hover { background: #94422e; color: white; }
+    .empty { padding: 32px 4px; color: var(--muted); font-size: 14px; }
+    .district-icon { display: grid; place-items: center; width: 54px; height: 54px; border: 2px solid white; border-radius: 50%; background: var(--green); box-shadow: 0 2px 10px #263c3366; color: white; font-family: Georgia, serif; font-size: 18px; font-weight: 700; }
+    .district-icon.has-events { background: var(--coral); }
+    .leaflet-tooltip.district-label { border: 0; border-radius: 2px; background: #fffefa; box-shadow: 0 2px 8px #263c3326; color: var(--ink); font-size: 11px; font-weight: 700; }
+    .leaflet-tooltip.district-label::before { display: none; }
+    .leaflet-control-attribution { font-size: 9px !important; }
+    @media (max-width: 850px) {
+      .workspace { grid-template-columns: 1fr; height: auto; max-height: none; }
+      .map-panel { height: 48vh; min-height: 340px; }
+      #map { min-height: 340px; }
+      .list-panel { max-height: 68vh; min-height: 440px; }
+    }
+    @media (max-width: 560px) {
+      .app { padding: 16px 12px 20px; }
+      header { align-items: center; }
+      .subtitle { max-width: 250px; font-size: 12px; }
+      .total { display: block; padding: 8px 10px; text-align: center; }
+      .total strong { display: block; font-size: 21px; }
+      .total span { font-size: 10px; }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .field:first-child { grid-column: 1 / -1; }
+      .map-panel { height: 43vh; min-height: 300px; }
+      #map { min-height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <p class="eyebrow">TAICHUNG · FOOD NOTES</p>
+        <h1>台中吃什麼</h1>
+        <p class="subtitle">把收藏的店放在一起，到哪一區就看哪一區。</p>
+      </div>
+      <div class="total"><strong id="total-count">0</strong><span>個口袋地點</span></div>
+    </header>
+
+    <section class="toolbar" aria-label="篩選店家">
+      <label class="field"><input id="search" type="search" placeholder="搜尋店名、食物或地址" aria-label="搜尋店名、食物或地址"></label>
+      <label class="field"><select id="district" aria-label="依行政區篩選"><option value="">全部行政區</option></select></label>
+      <label class="field"><select id="category" aria-label="依類型篩選"><option value="">全部類型</option></select></label>
+    </section>
+
+    <section class="workspace">
+      <div class="map-panel">
+        <div id="map" aria-label="台中店家所在區域地圖"></div>
+        <div class="map-note">地圖圓點代表行政區，不是店家精確座標。點圓點可篩選店家；地址按鈕可開啟精確導航。</div>
+      </div>
+      <section class="list-panel" aria-label="店家清單">
+        <div class="list-heading"><h2>口袋清單</h2><span id="result-count" aria-live="polite"></span><button id="add-toggle" class="add-trigger" type="button">＋ 新增地點</button></div>
+        <form id="add-form" class="add-form" hidden>
+          <div class="form-grid">
+            <label class="form-field">店名<input id="new-name" name="name" maxlength="80" required></label>
+            <label class="form-field">行政區<select id="new-district" name="district" required></select></label>
+            <label class="form-field">類型<select id="new-category" name="category" required></select></label>
+            <label class="form-field form-wide">地址<input id="new-address" name="address" maxlength="160" required></label>
+            <label class="form-field form-wide">推薦食物／備註<textarea id="new-food" name="food" maxlength="240"></textarea></label>
+          </div>
+          <div class="form-actions"><p id="pick-status" aria-live="polite">填寫資料後按「地圖選位置」，再點地圖標出店家位置。</p><button id="pick-location" type="button">地圖選位置</button><button id="save-place" type="submit" disabled>儲存</button><button id="cancel-add" type="button">取消</button></div>
+        </form>
+        <div id="results"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    let places = [
+      { name: "Tom and Jerry 台味快閃店", category: "快閃活動", district: "中區", address: "臺中驛鐵道文化園區 鐵鹿大街 A2", food: "台味主題快閃、限定周邊與集章活動", hours: "9/24–10/26；年份未註明，出發前請確認", search: "臺中驛鐵道文化園區" },
+      { name: "寶可夢中心快閃／新光三越日本展", category: "快閃活動", district: "西屯區", address: "台中新光三越中港店 10 樓日本展", food: "日本展美食、imonne 大福冰淇淋（抹茶、白桃）；寶可夢中心需留意領券", hours: "貼文標示 10/8–10/21；年份未註明，出發前請確認", search: "新光三越台中中港店" },
+      { name: "Opus67 作品早午餐", category: "早午餐／咖啡", district: "北區", address: "臺中市北區崇德里北興街 67 號", food: "荷蘭鬆餅、鐵鍋開心果法式吐司", hours: "10:00–17:00；週三、四休", search: "臺中市北區北興街67號", author: "https://www.instagram.com/mrwalkslowly/" },
+      { name: "滬舍餘味 西屯店", category: "中式／小吃", district: "北區", address: "臺中市北區健行里西屯路一段 405 號", food: "鮮肉生煎包、馬蘭頭餛飩；西屯店限定蔥油餅、豆沙鍋餅", hours: "11:00–20:00", phone: "04 2320 0029", search: "臺中市北區西屯路一段405號" },
+      { name: "滬舍餘味 公益路店", category: "中式／小吃", district: "南屯區", address: "臺中市南屯區三和里公益路二段 537 號", food: "鮮肉生煎包、馬蘭頭餛飩", hours: "營業時間待確認", phone: "04 2258 6111", search: "臺中市南屯區公益路二段537號" },
+      { name: "嶼里 With You", category: "早午餐／咖啡", district: "東區", address: "台中市東區振興路 2-6 號", food: "早午餐", hours: "10:30–21:00；週一休", search: "台中市東區振興路2-6號" },
+      { name: "ttk", category: "早午餐／咖啡", district: "東區", address: "台中市東區建興街 25 巷 6 號", food: "早午餐", hours: "10:30–15:00；週一、二休", search: "台中市東區建興街25巷6號" },
+      { name: "日月鄉村廚房 LUNE SOLEIL", category: "早午餐／咖啡", district: "北屯區", address: "台中市北屯區南興一路 88 號", food: "早午餐", hours: "09:30–17:30", search: "台中市北屯區南興一路88號" },
+      { name: "產出 The Food", category: "早午餐／咖啡", district: "西區", address: "台中市西區大忠南街 86 巷 7 號", food: "早午餐", hours: "10:00–17:00；週二休", search: "台中市西區大忠南街86巷7號" },
+      { name: "柳川屋麵包店", category: "甜點／麵包", district: "西區", address: "台中市西區民權路 213 巷 11 號", food: "爆裂生乳包（每日中午開賣，售完為止）", hours: "12:00–18:00", search: "台中市西區民權路213巷11號" },
+      { name: "戽道町甜點", category: "甜點／咖啡", district: "北區", address: "台中市北區健行路 906 巷 3 號", food: "香草千層蛋撻、楊枝甘露芒果蛋糕、甘梅紅心芭樂葡萄蛋糕", hours: "週六、日 12:00–19:00；營業日見店家 IG", phone: "0980-720-636", search: "台中市北區健行路906巷3號", shop: "https://www.instagram.com/houdaoting.studio/" },
+      { name: "Lollier 樂里輕食咖啡", category: "早午餐／咖啡", district: "北區", address: "臺中市北區榮華街 91 號", food: "早午餐", hours: "營業時間待確認", search: "臺中市北區榮華街91號", shop: "https://www.instagram.com/lollier.tc/" },
+      { name: "慕泥灰咖啡文創店", category: "早午餐／咖啡", district: "南區", address: "台中市南區復興路三段 459 號", food: "早午餐、咖啡", hours: "營業時間待確認", search: "台中市南區復興路三段459號", shop: "https://www.instagram.com/mucement_cafe/" },
+      { name: "Cupoti Cafe 咖波堤", category: "早午餐／咖啡", district: "南屯區", address: "臺中市南屯區河南路四段 435 號", food: "早午餐、咖啡", hours: "營業時間待確認", search: "臺中市南屯區河南路四段435號", shop: "https://www.instagram.com/cupoti_cafe/" },
+      { name: "Smoker 煙燻", category: "早午餐／咖啡", district: "西區", address: "台中市西區模範街 1 巷 13 號", food: "早午餐", hours: "營業時間待確認", search: "台中市西區模範街1巷13號", shop: "https://www.instagram.com/smoker_resto/" },
+      { name: "嵩 SUNG", category: "義大利麵", district: "西區", address: "台中市西區美村路一段 36 號 2 樓", food: "義大利麵", hours: "營業時間待確認", search: "台中市西區美村路一段36號" , shop: "https://www.instagram.com/sungxtaiwan/" },
+      { name: "春三朝午", category: "義大利麵／早午餐", district: "西屯區", address: "台中市西屯區上石路 179 號", food: "早午餐、義大利麵", hours: "營業時間待確認", search: "台中市西屯區上石路179號", shop: "https://www.instagram.com/treesun179/" },
+      { name: "盛食咖哩店 勤美店", category: "咖哩", district: "西區", address: "台中市西區模範街 23 巷 12-3 號", food: "咖哩", hours: "營業時間待確認", search: "台中市西區模範街23巷12-3號", shop: "https://www.instagram.com/chengshihcurry123/" },
+      { name: "熬匠", category: "咖哩", district: "東區", address: "台中市東區大勇街 27 號", food: "咖哩", hours: "營業時間待確認", search: "台中市東區大勇街27號", shop: "https://www.instagram.com/ao_jun27/" },
+      { name: "hechino 做茶菜", category: "中式／台菜", district: "地址待補", address: "原貼文未提供地址", food: "台菜／茶菜；菜色待確認", hours: "營業資訊待確認", search: "hechino做茶菜 台中", shop: "https://www.instagram.com/hechino_cuisine/" },
+      { name: "Mao King 貓王經典", category: "美式", district: "南屯區", address: "台中市南屯區龍富路四段 437 號", food: "美式料理", hours: "營業時間待確認", search: "台中市南屯區龍富路四段437號", shop: "https://www.instagram.com/maoking.2022/" },
+      { name: "三条河原町", category: "居酒屋", district: "西屯區", address: "台中市西屯區順平二街 2 號", food: "居酒屋料理", hours: "營業時間待確認", search: "台中市西屯區順平二街2號", shop: "https://www.instagram.com/3_sanjo.2024/" },
+      { name: "時光", category: "咖啡／甜點", district: "中區", address: "臺中市中區台灣大道一段 199 巷 1 號", food: "咖啡、甜點", hours: "營業時間待確認", search: "臺中市中區台灣大道一段199巷1號", shop: "https://www.instagram.com/hi.xikon/" },
+      { name: "感傷唱片行", category: "咖啡／甜點", district: "西區", address: "台中市西區美村路一段 564 巷 12 號 403", food: "咖啡、唱片行", hours: "營業時間待確認", search: "台中市西區美村路一段564巷12號", shop: "https://www.instagram.com/kind_of_blue_records/" },
+      { name: "Roundabout Café", category: "咖啡／甜點", district: "西區", address: "台中市西區大和路 73 號", food: "咖啡", hours: "營業時間待確認", search: "台中市西區大和路73號", shop: "https://www.instagram.com/roundaboutcoffee/" },
+      { name: "朝賀包子", category: "小吃／點心", district: "西區", address: "台中市西區林森路 224 巷 1 號", food: "原味、黑糖、南瓜、紅麴等彩色小饅頭", hours: "平日 14:30–18:30；週六、日 14:30–18:00；週一休", phone: "0972-129-360", search: "台中市西區林森路224巷1號" },
+      { name: "台灣鯛魚燒", category: "甜點／點心", district: "北區", address: "一中街；門牌待確認", food: "杜拜巧克力口味鯛魚燒", hours: "營業時間待確認", search: "台灣鯛魚燒 一中街 台中" },
+      { name: "饗初格子 Q 鬆餅", category: "甜點／點心", district: "北區", address: "一中街；門牌待確認", food: "格子鬆餅；推薦巧克力加麻糬、葡萄口味", hours: "營業時間待確認", search: "饗初格子Q鬆餅 一中街 台中" },
+      { name: "二沙堂 湯圓專賣", category: "甜點／小吃", district: "中區", address: "臺中市中區柳川里中山路 262 號", food: "燒麻糬、時光麵茶冰、紅豆湯圓", hours: "11:30–19:30；週六、日 11:00–20:00", phone: "04 2224 1228", search: "臺中市中區中山路262號" },
+      { name: "柳川屋 文心森林店", category: "甜點／麵包", district: "南屯區", address: "臺中市南屯區田心里文心路一段 289 號", food: "可頌、糖片甜可頌、鵝油蔥麵包、香草糖千層可頌霜淇淋", hours: "試營運貼文日期 10/9–10/11；正式營業時間未定", search: "臺中市南屯區文心路一段289號" }
+    ];
+
+    const savedPlacesKey = "taichung-food-map-added-places";
+    function readSavedPlaces() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(savedPlacesKey) || "[]");
+        return Array.isArray(saved) ? saved.filter((place) => place && place.custom === true && Number.isFinite(place.lat) && Number.isFinite(place.lng)) : [];
+      } catch {
+        return [];
+      }
+    }
+    places.push(...readSavedPlaces());
+
+    const districtCenters = {
+      "中區": [24.1435, 120.6826], "北區": [24.1578, 120.6824], "西區": [24.1452, 120.6637],
+      "南區": [24.1218, 120.6676], "東區": [24.1378, 120.6972], "北屯區": [24.1820, 120.6860],
+      "西屯區": [24.1812, 120.6378], "南屯區": [24.1406, 120.6435]
+    };
+    const map = L.map("map", { scrollWheelZoom: false }).setView([24.158, 120.675], 12);
+    L.tileLayer("https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=7rEG8XVEBhSpNPq5YSsr", { maxZoom: 22, attribution: '&copy; <a href="https://www.maptiler.com/copyright/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+    const pins = new Map();
+    const exactMarkers = L.layerGroup().addTo(map);
+    const searchInput = document.getElementById("search");
+    const districtSelect = document.getElementById("district");
+    const categorySelect = document.getElementById("category");
+    const results = document.getElementById("results");
+    const addForm = document.getElementById("add-form");
+    const pickStatus = document.getElementById("pick-status");
+    const saveButton = document.getElementById("save-place");
+    let isPickingLocation = false;
+    let pendingLocation = null;
+    let previewMarker = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+    }
+
+    function mapsUrl(place) {
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(place.search + " 台中");
+    }
+    function render() {
+      const query = searchInput.value.trim().toLocaleLowerCase();
+      const selectedDistrict = districtSelect.value;
+      const selectedCategory = categorySelect.value;
+      const visible = places.filter((place) => {
+        const text = [place.name, place.food, place.address, place.district, place.category].join(" ").toLocaleLowerCase();
+        return (!query || text.includes(query)) && (!selectedDistrict || place.district === selectedDistrict) && (!selectedCategory || place.category === selectedCategory);
+      });
+      document.getElementById("result-count").textContent = `顯示 ${visible.length} / ${places.length}`;
+      results.innerHTML = visible.length ? visible.map((place) => {
+        const isEvent = place.category === "快閃活動";
+        const placeIndex = places.indexOf(place);
+        const actions = `<a href="${mapsUrl(place)}" target="_blank" rel="noopener">地圖與導航 ↗</a>${place.shop ? `<a href="${place.shop}" target="_blank" rel="noopener">店家 IG ↗</a>` : ""}${place.author ? `<a href="${place.author}" target="_blank" rel="noopener">分享者 IG ↗</a>` : ""}${place.source ? `<a href="${place.source}" target="_blank" rel="noopener">貼文 ↗</a>` : ""}${place.custom ? `<button class="delete-place" type="button" data-delete="${placeIndex}">刪除</button>` : ""}`;
+        return `<article class="entry${isEvent ? " event" : ""}" data-id="${placeIndex}"><div class="entry-top"><h3>${escapeHtml(place.name)}</h3><span class="tag">${escapeHtml(place.category)}</span></div><p class="food">${escapeHtml(place.food)}</p><div class="details"><p>⌖ ${escapeHtml(place.district)} · ${escapeHtml(place.address)}</p><p>◷ ${escapeHtml(place.hours)}</p>${place.phone ? `<p>☎ ${escapeHtml(place.phone)}</p>` : ""}</div><div class="actions">${actions}</div></article>`;
+      }).join("") : '<p class="empty">沒有符合條件的地點。</p>';
+      document.getElementById("total-count").textContent = places.length;
+      document.querySelectorAll(".entry").forEach((entry) => entry.addEventListener("mouseenter", () => highlight(Number(entry.dataset.id))));
+      document.querySelectorAll(".delete-place").forEach((button) => button.addEventListener("click", () => {
+        const index = Number(button.dataset.delete);
+        const place = places[index];
+        if (!place?.custom || !window.confirm(`要刪除「${place.name}」嗎？`)) return;
+        try {
+          const remaining = places.filter((item) => item.custom && item !== place);
+          localStorage.setItem(savedPlacesKey, JSON.stringify(remaining));
+        } catch {
+          window.alert("無法更新瀏覽器儲存資料，請確認瀏覽器允許使用本機儲存。");
+          return;
+        }
+        places.splice(index, 1);
+        render();
+      }));
+      updatePins(visible);
+    }
+    function highlight(id) {
+      document.querySelectorAll(".entry.active").forEach((entry) => entry.classList.remove("active"));
+      const entry = document.querySelector(`.entry[data-id="${id}"]`);
+      if (entry) entry.classList.add("active");
+    }
+    function updatePins(visible) {
+      const counts = new Map();
+      visible.filter((place) => !Number.isFinite(place.lat) || !Number.isFinite(place.lng)).forEach((place) => {
+        if (districtCenters[place.district]) {
+          const value = counts.get(place.district) || { count: 0, events: 0 };
+          value.count += 1;
+          if (place.category === "快閃活動") value.events += 1;
+          counts.set(place.district, value);
+        }
+      });
+      for (const [district, pin] of pins) {
+        if (!counts.has(district)) { map.removeLayer(pin); pins.delete(district); }
+      }
+      counts.forEach((value, district) => {
+        const icon = L.divIcon({ className: "", html: `<div class="district-icon${value.events ? " has-events" : ""}">${value.count}</div>`, iconSize: [54, 54], iconAnchor: [27, 27] });
+        if (pins.has(district)) {
+          pins.get(district).setIcon(icon);
+        } else {
+          const pin = L.marker(districtCenters[district], { icon }).addTo(map).bindTooltip(`${district} · ${value.count} 個地點`, { permanent: true, direction: "top", offset: [0, -25], className: "district-label" });
+          pin.on("click", () => { districtSelect.value = districtSelect.value === district ? "" : district; render(); });
+          pins.set(district, pin);
+        }
+      });
+      exactMarkers.clearLayers();
+      visible.forEach((place) => {
+        if (!Number.isFinite(place.lat) || !Number.isFinite(place.lng)) return;
+        const index = places.indexOf(place);
+        const marker = L.marker([place.lat, place.lng]).addTo(exactMarkers);
+        marker.bindPopup(`<strong>${escapeHtml(place.name)}</strong><br>${escapeHtml(place.address)}`);
+        marker.on("click", () => {
+          highlight(index);
+          document.querySelector(`.entry[data-id="${index}"]`)?.scrollIntoView({ block: "nearest" });
+        });
+      });
+    }
+    [...new Set(places.map((place) => place.district))].sort((a, b) => a.localeCompare(b, "zh-Hant")).forEach((district) => {
+      const option = document.createElement("option"); option.value = district; option.textContent = district; districtSelect.append(option);
+    });
+    [...new Set(places.map((place) => place.category))].sort((a, b) => a.localeCompare(b, "zh-Hant")).forEach((category) => {
+      const option = document.createElement("option"); option.value = category; option.textContent = category; categorySelect.append(option);
+    });
+    searchInput.addEventListener("input", render);
+    districtSelect.addEventListener("change", render);
+    categorySelect.addEventListener("change", render);
+    const newDistrictSelect = document.getElementById("new-district");
+    Object.keys(districtCenters).forEach((district) => {
+      const option = document.createElement("option"); option.value = district; option.textContent = district; newDistrictSelect.append(option);
+    });
+    [...new Set(places.map((place) => place.category))].sort((a, b) => a.localeCompare(b, "zh-Hant")).forEach((category) => {
+      const option = document.createElement("option"); option.value = category; option.textContent = category; document.getElementById("new-category").append(option);
+    });
+    document.getElementById("add-toggle").addEventListener("click", () => {
+      addForm.hidden = !addForm.hidden;
+      if (!addForm.hidden) document.getElementById("new-name").focus();
+    });
+    document.getElementById("pick-location").addEventListener("click", () => {
+      isPickingLocation = true;
+      document.querySelector(".map-panel").classList.add("map-picking");
+      pickStatus.textContent = "請在左側地圖點一下店家所在位置。";
+    });
+    map.on("click", (event) => {
+      if (!isPickingLocation) return;
+      pendingLocation = { lat: event.latlng.lat, lng: event.latlng.lng };
+      if (previewMarker) map.removeLayer(previewMarker);
+      previewMarker = L.marker(event.latlng).addTo(map).bindPopup("新地點位置").openPopup();
+      isPickingLocation = false;
+      document.querySelector(".map-panel").classList.remove("map-picking");
+      pickStatus.textContent = `已選位置：${pendingLocation.lat.toFixed(5)}, ${pendingLocation.lng.toFixed(5)}`;
+      saveButton.disabled = false;
+    });
+    addForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!pendingLocation) {
+        pickStatus.textContent = "請先按「地圖選位置」並在地圖上點選位置。";
+        return;
+      }
+      const newPlace = {
+        name: document.getElementById("new-name").value.trim(),
+        category: document.getElementById("new-category").value,
+        district: newDistrictSelect.value,
+        address: document.getElementById("new-address").value.trim(),
+        food: document.getElementById("new-food").value.trim() || "尚未補充",
+        hours: "營業時間待補",
+        search: document.getElementById("new-address").value.trim(),
+        lat: pendingLocation.lat,
+        lng: pendingLocation.lng,
+        custom: true
+      };
+      try {
+        const saved = places.filter((place) => place.custom);
+        localStorage.setItem(savedPlacesKey, JSON.stringify([...saved, newPlace]));
+      } catch {
+        pickStatus.textContent = "無法儲存到此瀏覽器，請確認瀏覽器允許網站使用本機儲存。";
+        return;
+      }
+      places.push(newPlace);
+      searchInput.value = "";
+      districtSelect.value = "";
+      categorySelect.value = "";
+      render();
+      map.setView([newPlace.lat, newPlace.lng], 16);
+      addForm.reset();
+      addForm.hidden = true;
+      pendingLocation = null;
+      previewMarker = null;
+      saveButton.disabled = true;
+      pickStatus.textContent = "填寫資料後按「地圖選位置」，再點地圖標出店家位置。";
+    });
+    document.getElementById("cancel-add").addEventListener("click", () => {
+      if (previewMarker) map.removeLayer(previewMarker);
+      previewMarker = null;
+      pendingLocation = null;
+      isPickingLocation = false;
+      saveButton.disabled = true;
+      document.querySelector(".map-panel").classList.remove("map-picking");
+      addForm.reset();
+      addForm.hidden = true;
+      pickStatus.textContent = "填寫資料後按「地圖選位置」，再點地圖標出店家位置。";
+    });
+    render();
+    window.addEventListener("resize", () => map.invalidateSize());
+  </script>
+</body>
+</html>
