@@ -68,6 +68,9 @@
     .entry { position: relative; padding: 16px 2px 15px 15px; border-bottom: 1px solid var(--line); transition: background-color .2s ease; }
     .entry::before { position: absolute; top: 18px; bottom: 16px; left: 0; width: 3px; background: var(--green); content: ""; }
     .entry.event::before { background: var(--coral); }
+    .entry.hotel { background: #fbf6e7; }
+    .entry.hotel::before { background: #b78328; }
+    .entry.hotel .tag { background: #f1e4bd; color: #76520f; }
     .entry:hover, .entry.active { background: #f5f7f1; }
     .entry-top { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
     .entry h3 { margin: 0; font-size: 16px; line-height: 1.4; }
@@ -149,6 +152,37 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
     let places = [
+      { name: "兔淘手作甜點", category: "甜點／點心", district: "東區", address: "旱溪夜市；攤位待確認", food: "麻糬球、焦糖海鹽香蕉奶酪、楊枝甘露；建議提早排隊", hours: "週四、五、六擺攤；時間待確認", search: "兔淘手作甜點 旱溪夜市" },
+      { name: "迴香印度餐廳 Savory Curry 大鵬店", category: "印度料理／咖哩", district: "西屯區", address: "臺中市西屯區大鵬路 166 號", food: "主廚牛肉咖哩、南印椰香咖哩、爆漿起司烤餅、奶油起司烤雞、脆薄餅沙拉卷、芒果優格飲、香料奶茶；貼文雙人套餐 888 元，價格請向店家確認；南瓜起司烤餅限 10/16–10/31，年份未註明", hours: "平日 11:30–14:30、17:00–21:00；假日 11:00–14:30、17:00–21:00", phone: "04-2295-5163", search: "迴香印度餐廳 大鵬店 臺中市西屯區大鵬路166號", instagramTag: "https://www.instagram.com/explore/tags/印度料理/" },
+      { name: "食鮮森鐵板燒 沙鹿店", category: "鐵板燒", district: "沙鹿區", address: "臺中市沙鹿區成功東街 42 號", food: "鐵板燒；貼文提及青菜、白飯、湯、冰品、甜點吃到飽，蛋炒飯及炒麵限量；供應內容請向店家確認", hours: "營業時間待確認", search: "食鮮森鐵板燒 臺中市沙鹿區成功東街42號", instagramTag: "https://www.instagram.com/explore/tags/台中鐵板燒/" },
+      { name: "食鮮森鐵板燒 大埔店", category: "鐵板燒", district: "彰化市", address: "彰化市大埔路 338 號", food: "鐵板燒；各分店吃到飽供應內容請向店家確認", hours: "營業時間待確認", search: "食鮮森鐵板燒 彰化市大埔路338號", instagramTag: "https://www.instagram.com/explore/tags/台中鐵板燒/" },
+      { name: "食鮮森鐵板燒 中科店", category: "鐵板燒", district: "西屯區", address: "臺中市西屯區福林路 117 號", food: "鐵板燒；各分店吃到飽供應內容請向店家確認", hours: "營業時間待確認", search: "食鮮森鐵板燒 臺中市西屯區福林路117號", instagramTag: "https://www.instagram.com/explore/tags/台中鐵板燒/" },
+      { name: "食鮮森鐵板燒 東興店", category: "鐵板燒", district: "西區", address: "臺中市西區東興路三段 6 號", food: "鐵板燒；各分店吃到飽供應內容請向店家確認", hours: "營業時間待確認", search: "食鮮森鐵板燒 臺中市西區東興路三段6號", instagramTag: "https://www.instagram.com/explore/tags/台中鐵板燒/" },
+      { name: "食鮮森鐵板燒 軍功店", category: "鐵板燒", district: "北屯區", address: "臺中市北屯區軍功路一段 403 號", food: "鐵板燒；各分店吃到飽供應內容請向店家確認", hours: "營業時間待確認", search: "食鮮森鐵板燒 臺中市北屯區軍功路一段403號", instagramTag: "https://www.instagram.com/explore/tags/台中鐵板燒/" },
+      { name: "暗巷烤雞 復興總店", category: "烤雞／小吃", district: "南區", address: "臺中市南區復興路三段 297 號", food: "烤雞、豬肋排；建議預訂", hours: "12:00–22:00；週一休", phone: "0980-960-898", search: "暗巷烤雞 臺中市南區復興路三段297號", instagramTag: "https://www.instagram.com/explore/tags/暗巷烤雞/" },
+      { name: "大慶夜市炸吐司（店名待確認）", category: "甜點／點心", district: "南區", address: "大慶夜市；攤位待確認", food: "杜拜巧克力炸吐司、布丁炸吐司；貼文價格 80 元，請以現場為準", hours: "週三、五、六擺攤；時間待確認", search: "大慶夜市 杜拜巧克力炸吐司", instagramTag: "https://www.instagram.com/explore/tags/大慶夜市/" },
+      { name: "小鵲幸 車輪餅 台中美村店", category: "甜點／點心", district: "西區", address: "臺中市西區中興里美村路一段 222 號", food: "流心花生車輪餅、每日限定口味、木瓜牛奶冰沙", hours: "營業時間待確認", search: "小鵲幸 車輪餅 臺中市西區美村路一段222號" },
+      { name: "曉翮流域", category: "甜點／伴手禮", district: "西屯區", address: "臺中市西屯區河南路二段 91-2 號", food: "夾心餅、夾餡蛋捲；抹茶、巧克力開心果、草莓、鐵觀音等口味，品項依店家供應", hours: "10:00–18:00", search: "曉翮流域 臺中市西屯區河南路二段91-2號", instagramTag: "https://www.instagram.com/explore/tags/曉翮流域/" },
+      { name: "正牌米糕莊", category: "米糕／小吃", district: "清水區", address: "臺中市清水區大街路 75-1 號", food: "米糕、滷豬腳、紅豆粳粽、排骨酥、肉燥飯、炒手", hours: "09:00–19:30；週三休", phone: "04 2622 0567", search: "臺中市清水區大街路75-1號", source: "https://fullfenblog.tw/zhengpai-rice-cake/" },
+      { name: "天使光環米糕", category: "米糕／小吃", district: "梧棲區", address: "臺中市梧棲區中央路一段 681 號", food: "米糕、小菜", hours: "11:00–19:30", phone: "04 2657 9768", search: "臺中市梧棲區中央路一段681號", source: "https://fullfenblog.tw/angel-halo-ricecake/" },
+      { name: "東東芋圓本店", category: "甜點／冰品", district: "北屯區", address: "臺中市北屯區東山路二段 48-3 號", food: "芋圓", hours: "09:00–22:00", phone: "04 2239 6349", search: "臺中市北屯區東山路二段48-3號", source: "https://fullfenblog.tw/dondon/" },
+      { name: "明倫蛋餅 大坑店", category: "小吃／點心", district: "北屯區", address: "臺中市北屯區東山路二段 51-10 號", food: "甜味蛋餅", hours: "14:30–20:00；週一休", phone: "0978 060 600", search: "臺中市北屯區東山路二段51-10號", source: "https://fullfenblog.tw/dondon/" },
+      { name: "老芋仔芋圓", category: "甜點／冰品", district: "北屯區", address: "臺中市北屯區東山路一段 408-2 號", food: "芋圓、芋頭西米露、芋頭冰淇淋", hours: "09:00–21:30", phone: "04 2239 5289", search: "臺中市北屯區東山路一段408-2號", source: "https://fullfenblog.tw/old-taro-boy/" },
+      { name: "大甲溪發電廠白冷冰棒", category: "甜點／冰品", district: "和平區", address: "臺中市和平區東關路二段 91 號", food: "白冷冰棒；五葉松口味", hours: "08:00–17:00", phone: "04 2594 3615", search: "臺中市和平區東關路二段91號", source: "https://fullfenblog.tw/white-cold-popsicle/" },
+      { name: "台中肉蛋吐司中西早餐店", category: "早餐", district: "北區", address: "臺中市北區健行路 748 號", food: "肉蛋吐司、蛋餅、沙拉、蘿蔔糕", hours: "04:30–12:00；週六、日營業至 12:30；週一休", phone: "04 2208 5888", search: "臺中市北區健行路748號", source: "https://fullfenblog.tw/meat-and-egg-toast/" },
+      { name: "覓 · 鍋物", category: "火鍋", district: "沙鹿區", address: "臺中市沙鹿區東安街 7 號", food: "火鍋吃到飽、櫻桃鴨料理、泰國蝦料理", hours: "11:00–22:30", phone: "04 2632 3698", search: "臺中市沙鹿區東安街7號", source: "https://fullfenblog.tw/seeking-hot-pot/" },
+      { name: "天奕創意料理咖啡", category: "咖啡／簡餐", district: "后里區", address: "臺中市后里區甲后路二段 72 號", food: "魯肉飯、義大利麵、燉飯、甜點、下午茶、輕食、冰淇淋", hours: "11:00–20:30", phone: "04 2557 1527", search: "臺中市后里區甲后路二段72號", source: "https://fullfenblog.tw/ty-cafe/" },
+      { name: "耕讀園市政店", category: "茶館／中式", district: "西屯區", address: "臺中市西屯區市政路 109 號", food: "中式餐點、下午茶", hours: "10:00–20:00", phone: "04 2251 8388", search: "臺中市西屯區市政路109號", source: "https://fullfenblog.tw/ktytea/" },
+      { name: "曼谷皇朝泰式料理", category: "泰式料理", district: "西區", address: "臺中市西區向上路一段 400 號", food: "泰式料理、合菜", hours: "11:00–14:00、17:30–21:00；假日 17:00 起；週一、二休", phone: "0918 026 654", search: "臺中市西區向上路一段400號", source: "https://fullfenblog.tw/bangkok-dynasty/" },
+      { name: "卓也小屋大安庭院餐坊", category: "中式料理／景觀餐廳", district: "大安區", address: "臺中市大安區中山南路 86 號", food: "中式合菜", hours: "10:00–20:00", phone: "04 2671 5526", search: "臺中市大安區中山南路86號", source: "https://fullfenblog.tw/zhuo-ye-cottage/" },
+      { name: "無為草堂", category: "茶館／中式", district: "南屯區", address: "臺中市南屯區公益路二段 106 號", food: "中式餐點、茶飲", hours: "10:30–21:30；週二休", phone: "04 2329 6707", search: "臺中市南屯區公益路二段106號", source: "https://fullfenblog.tw/wuwei-teahouse/" },
+      { name: "火曜二代目", category: "日式／拉麵", district: "西區", address: "臺中市西區柳川西路二段 192 號", food: "拉麵、叉燒飯、煎餃", hours: "週一至週五 11:30–14:00、17:30–22:00；週六、日 17:30–23:00", phone: "04 2222 1270", search: "臺中市西區柳川西路二段192號", source: "https://fullfenblog.tw/kayodaime-ramen/" },
+      { name: "班比納鄉村居", category: "法式／景觀餐廳", district: "太平區", address: "臺中市太平區長龍路二段南國巷 161 號", food: "法式創意料理", hours: "11:50–15:00；週二休", phone: "04 2275 2837", search: "臺中市太平區長龍路二段南國巷161號", source: "https://fullfenblog.tw/bambino-country-life/" },
+      { name: "田寮農莊", category: "中式料理／景觀餐廳", district: "南屯區", address: "臺中市南屯區楓樹里樂田巷 2-34 號", food: "古早味料理", hours: "週一至週五 11:30–14:00、17:00–19:30；週六、日 11:30–20:00；週三休", phone: "04 2479 5186", search: "臺中市南屯區楓樹里樂田巷2-34號", source: "https://fullfenblog.tw/tianliao-farmhouse/" },
+      { name: "金衛亭浮誇壽司樂群町二代目", category: "日式／壽司", district: "西區", address: "臺中市西區樂群街 439 號", food: "日式壽司料理", hours: "11:00–14:00、17:30–22:00", phone: "04 2376 3282", search: "臺中市西區樂群街439號", source: "https://fullfenblog.tw/jin-weiting/" },
+      { name: "迴道侏羅紀", category: "親子餐廳", district: "豐原區", address: "臺中市豐原區鎌村路 39 巷 8 號", food: "恐龍主題餐廳；餐點、下午茶", hours: "15:00–23:00；週一休", phone: "04 2536 2020", search: "臺中市豐原區鎌村路39巷8號", source: "https://fullfenblog.tw/return-jurassic/" },
+      { name: "又見一炊煙", category: "無菜單／景觀餐廳", district: "新社區", address: "臺中市新社區中興嶺街一段 107 號", food: "無國界創意料理、無菜單下午茶", hours: "11:00–21:00", phone: "04 2582 3568", search: "臺中市新社區中興嶺街一段107號", source: "https://fullfenblog.tw/tc-foodingsmoke/" },
+      { name: "頭等艙飯店 綠園道館", category: "住宿／飯店", district: "西區", address: "臺中市西區美村路一段 22 號", food: "飯店住宿", hours: "住宿資訊請以飯店公告為準", search: "頭等艙飯店 綠園道館 臺中市西區美村路一段22號" },
       { name: "Tom and Jerry 台味快閃店", category: "快閃活動", district: "中區", address: "臺中驛鐵道文化園區 鐵鹿大街 A2", food: "台味主題快閃、限定周邊與集章活動", hours: "9/24–10/26；年份未註明，出發前請確認", search: "臺中驛鐵道文化園區" },
       { name: "寶可夢中心快閃／新光三越日本展", category: "快閃活動", district: "西屯區", address: "台中新光三越中港店 10 樓日本展", food: "日本展美食、imonne 大福冰淇淋（抹茶、白桃）；寶可夢中心需留意領券", hours: "貼文標示 10/8–10/21；年份未註明，出發前請確認", search: "新光三越台中中港店" },
       { name: "Opus67 作品早午餐", category: "早午餐／咖啡", district: "北區", address: "臺中市北區崇德里北興街 67 號", food: "荷蘭鬆餅、鐵鍋開心果法式吐司", hours: "10:00–17:00；週三、四休", search: "臺中市北區北興街67號", author: "https://www.instagram.com/mrwalkslowly/" },
@@ -192,6 +226,22 @@
     }
     places.push(...readSavedPlaces());
 
+    const categoryGroups = {
+      "小吃": ["小吃／點心", "中式／小吃", "中式／台菜", "米糕／小吃"],
+      "早餐／早午餐": ["早餐", "早午餐／咖啡", "義大利麵／早午餐"],
+      "咖啡／甜點": ["甜點／點心", "甜點／伴手禮", "甜點／冰品", "甜點／咖啡", "甜點／小吃", "甜點／麵包", "咖啡／簡餐", "茶館／中式"],
+      "異國料理": ["印度料理／咖哩", "泰式料理", "日式／拉麵", "日式／壽司", "義大利麵", "咖哩", "美式", "居酒屋", "餐廳／西式"],
+      "火鍋／燒烤": ["火鍋", "鐵板燒", "烤雞／小吃"],
+      "景觀／親子餐廳": ["中式料理／景觀餐廳", "法式／景觀餐廳", "無菜單／景觀餐廳", "親子餐廳"],
+      "住宿": ["住宿／飯店"],
+      "活動": ["快閃活動"]
+    };
+    const categories = Object.keys(categoryGroups);
+    places.forEach((place) => {
+      place.originalCategory = place.originalCategory || place.category;
+      place.category = categories.find((category) => category === place.category || categoryGroups[category].includes(place.category)) || "小吃";
+    });
+
     const districtCenters = {
       "中區": [24.1435, 120.6826], "北區": [24.1578, 120.6824], "西區": [24.1452, 120.6637],
       "南區": [24.1218, 120.6676], "東區": [24.1378, 120.6972], "北屯區": [24.1820, 120.6860],
@@ -224,15 +274,16 @@
       const selectedDistrict = districtSelect.value;
       const selectedCategory = categorySelect.value;
       const visible = places.filter((place) => {
-        const text = [place.name, place.food, place.address, place.district, place.category].join(" ").toLocaleLowerCase();
+        const text = [place.name, place.food, place.address, place.district, place.category, place.originalCategory].join(" ").toLocaleLowerCase();
         return (!query || text.includes(query)) && (!selectedDistrict || place.district === selectedDistrict) && (!selectedCategory || place.category === selectedCategory);
       });
       document.getElementById("result-count").textContent = `顯示 ${visible.length} / ${places.length}`;
       results.innerHTML = visible.length ? visible.map((place) => {
-        const isEvent = place.category === "快閃活動";
+        const isEvent = place.category === "活動";
+        const isHotel = place.category === "住宿";
         const placeIndex = places.indexOf(place);
-        const actions = `<a href="${mapsUrl(place)}" target="_blank" rel="noopener">地圖與導航 ↗</a>${place.shop ? `<a href="${place.shop}" target="_blank" rel="noopener">店家 IG ↗</a>` : ""}${place.author ? `<a href="${place.author}" target="_blank" rel="noopener">分享者 IG ↗</a>` : ""}${place.source ? `<a href="${place.source}" target="_blank" rel="noopener">貼文 ↗</a>` : ""}${place.custom ? `<button class="delete-place" type="button" data-delete="${placeIndex}">刪除</button>` : ""}`;
-        return `<article class="entry${isEvent ? " event" : ""}" data-id="${placeIndex}"><div class="entry-top"><h3>${escapeHtml(place.name)}</h3><span class="tag">${escapeHtml(place.category)}</span></div><p class="food">${escapeHtml(place.food)}</p><div class="details"><p>⌖ ${escapeHtml(place.district)} · ${escapeHtml(place.address)}</p><p>◷ ${escapeHtml(place.hours)}</p>${place.phone ? `<p>☎ ${escapeHtml(place.phone)}</p>` : ""}</div><div class="actions">${actions}</div></article>`;
+        const actions = `<a href="${mapsUrl(place)}" target="_blank" rel="noopener">地圖與導航 ↗</a>${place.shop ? `<a href="${place.shop}" target="_blank" rel="noopener">店家 IG ↗</a>` : ""}${place.instagramTag ? `<a href="${place.instagramTag}" target="_blank" rel="noopener">IG 標籤搜尋 ↗</a>` : ""}${place.author ? `<a href="${place.author}" target="_blank" rel="noopener">分享者 IG ↗</a>` : ""}${place.source ? `<a href="${place.source}" target="_blank" rel="noopener">貼文 ↗</a>` : ""}${place.custom ? `<button class="delete-place" type="button" data-delete="${placeIndex}">刪除</button>` : ""}`;
+        return `<article class="entry${isEvent ? " event" : ""}${isHotel ? " hotel" : ""}" data-id="${placeIndex}"><div class="entry-top"><h3>${escapeHtml(place.name)}</h3><span class="tag">${escapeHtml(place.category)}</span></div><p class="food">${escapeHtml(place.food)}</p><div class="details"><p>⌖ ${escapeHtml(place.district)} · ${escapeHtml(place.address)}</p><p>◷ ${escapeHtml(place.hours)}</p>${place.phone ? `<p>☎ ${escapeHtml(place.phone)}</p>` : ""}</div><div class="actions">${actions}</div></article>`;
       }).join("") : '<p class="empty">沒有符合條件的地點。</p>';
       document.getElementById("total-count").textContent = places.length;
       document.querySelectorAll(".entry").forEach((entry) => entry.addEventListener("mouseenter", () => highlight(Number(entry.dataset.id))));
@@ -263,7 +314,7 @@
         if (districtCenters[place.district]) {
           const value = counts.get(place.district) || { count: 0, events: 0 };
           value.count += 1;
-          if (place.category === "快閃活動") value.events += 1;
+          if (place.category === "活動") value.events += 1;
           counts.set(place.district, value);
         }
       });
@@ -295,7 +346,7 @@
     [...new Set(places.map((place) => place.district))].sort((a, b) => a.localeCompare(b, "zh-Hant")).forEach((district) => {
       const option = document.createElement("option"); option.value = district; option.textContent = district; districtSelect.append(option);
     });
-    [...new Set(places.map((place) => place.category))].sort((a, b) => a.localeCompare(b, "zh-Hant")).forEach((category) => {
+    categories.forEach((category) => {
       const option = document.createElement("option"); option.value = category; option.textContent = category; categorySelect.append(option);
     });
     searchInput.addEventListener("input", render);
@@ -305,7 +356,7 @@
     Object.keys(districtCenters).forEach((district) => {
       const option = document.createElement("option"); option.value = district; option.textContent = district; newDistrictSelect.append(option);
     });
-    [...new Set(places.map((place) => place.category))].sort((a, b) => a.localeCompare(b, "zh-Hant")).forEach((category) => {
+    categories.forEach((category) => {
       const option = document.createElement("option"); option.value = category; option.textContent = category; document.getElementById("new-category").append(option);
     });
     document.getElementById("add-toggle").addEventListener("click", () => {
