@@ -76,6 +76,9 @@
     .entry h3 { margin: 0; font-size: 16px; line-height: 1.4; }
     .tag { flex: 0 0 auto; padding: 3px 7px; background: var(--green-light); color: var(--green); font-size: 10px; font-weight: 700; }
     .event .tag { background: #f7e8df; color: #94422e; }
+    .place-photo { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; margin-top: 10px; background: #fff; }
+    .place-image { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .place-photo.ig-screenshot .place-image { position: absolute; width: 200%; height: auto; max-width: none; left: 0; top: 50%; transform: translateY(-50%); }
     .food { margin: 7px 0 0; color: #394741; font-size: 13px; line-height: 1.55; }
     .details { display: grid; gap: 4px; margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.45; }
     .details p { margin: 0; }
@@ -152,6 +155,12 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
     let places = [
+      { name: "逢甲夜市", category: "夜市", district: "西屯區", address: "臺中市西屯區文華路、逢甲路一帶", food: "夜市小吃、飲料、服飾商圈", hours: "各攤營業時間不同，出發前請確認", search: "逢甲夜市 臺中市西屯區文華路" },
+      { name: "一中街夜市", category: "夜市", district: "北區", address: "臺中市北區一中街、育才街一帶", food: "小吃、飲料、服飾商圈", hours: "各店與攤位營業時間不同，出發前請確認", search: "一中街夜市 臺中市北區一中街" },
+      { name: "旱溪夜市", category: "夜市", district: "東區", address: "臺中市東區旱溪東路一段一帶", food: "夜市小吃、甜點、遊戲攤位", hours: "營業日與時間請以夜市最新公告為準", search: "旱溪夜市 臺中市東區" },
+      { name: "大慶夜市", category: "夜市", district: "南區", address: "臺中市南區建國南路一段、東興路一段一帶", food: "夜市小吃、甜點、遊戲攤位", hours: "營業日與時間請以夜市最新公告為準", search: "大慶夜市 臺中市南區" },
+      { name: "中華路夜市", category: "夜市", district: "中區", address: "臺中市中區中華路一段一帶", food: "傳統小吃、宵夜", hours: "各攤營業時間不同，出發前請確認", search: "中華路夜市 臺中市中區" },
+      { name: "忠孝路夜市", category: "夜市", district: "南區", address: "臺中市南區忠孝路一帶", food: "傳統小吃、飲料、宵夜", hours: "各攤營業時間不同，出發前請確認", search: "忠孝路夜市 臺中市南區" },
       { name: "兔淘手作甜點", category: "甜點／點心", district: "東區", address: "旱溪夜市；攤位待確認", food: "麻糬球、焦糖海鹽香蕉奶酪、楊枝甘露；建議提早排隊", hours: "週四、五、六擺攤；時間待確認", search: "兔淘手作甜點 旱溪夜市" },
       { name: "迴香印度餐廳 Savory Curry 大鵬店", category: "印度料理／咖哩", district: "西屯區", address: "臺中市西屯區大鵬路 166 號", food: "主廚牛肉咖哩、南印椰香咖哩、爆漿起司烤餅、奶油起司烤雞、脆薄餅沙拉卷、芒果優格飲、香料奶茶；貼文雙人套餐 888 元，價格請向店家確認；南瓜起司烤餅限 10/16–10/31，年份未註明", hours: "平日 11:30–14:30、17:00–21:00；假日 11:00–14:30、17:00–21:00", phone: "04-2295-5163", search: "迴香印度餐廳 大鵬店 臺中市西屯區大鵬路166號", instagramTag: "https://www.instagram.com/explore/tags/印度料理/" },
       { name: "食鮮森鐵板燒 沙鹿店", category: "鐵板燒", district: "沙鹿區", address: "臺中市沙鹿區成功東街 42 號", food: "鐵板燒；貼文提及青菜、白飯、湯、冰品、甜點吃到飽，蛋炒飯及炒麵限量；供應內容請向店家確認", hours: "營業時間待確認", search: "食鮮森鐵板燒 臺中市沙鹿區成功東街42號", instagramTag: "https://www.instagram.com/explore/tags/台中鐵板燒/" },
@@ -234,7 +243,8 @@
       "火鍋／燒烤": ["火鍋", "鐵板燒", "烤雞／小吃"],
       "景觀／親子餐廳": ["中式料理／景觀餐廳", "法式／景觀餐廳", "無菜單／景觀餐廳", "親子餐廳"],
       "住宿": ["住宿／飯店"],
-      "活動": ["快閃活動"]
+      "活動": ["快閃活動"],
+      "夜市": []
     };
     const categories = Object.keys(categoryGroups);
     places.forEach((place) => {
@@ -266,6 +276,17 @@
       return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
     }
 
+    const placeImages = {
+      "台灣鯛魚燒": "image/Screenshot 2026-10-16 162126.png",
+      "寶可夢中心快閃／新光三越日本展": "image/Screenshot 2026-10-16 162149.png",
+      "朝賀包子": "image/Screenshot 2026-10-16 162233.png",
+      "Opus67 作品早午餐": "image/Screenshot 2026-10-16 162441.png",
+      "滬舍餘味 西屯店": "image/Screenshot 2026-10-16 162604.png",
+      "柳川屋麵包店": "image/Screenshot 2026-10-16 162705.png",
+      "戽道町甜點": "image/Screenshot 2026-10-16 162742.png",
+      "二沙堂 湯圓專賣": "image/二沙堂.jpg"
+    };
+
     function mapsUrl(place) {
       return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(place.search + " 台中");
     }
@@ -283,7 +304,10 @@
         const isHotel = place.category === "住宿";
         const placeIndex = places.indexOf(place);
         const actions = `<a href="${mapsUrl(place)}" target="_blank" rel="noopener">地圖與導航 ↗</a>${place.shop ? `<a href="${place.shop}" target="_blank" rel="noopener">店家 IG ↗</a>` : ""}${place.instagramTag ? `<a href="${place.instagramTag}" target="_blank" rel="noopener">IG 標籤搜尋 ↗</a>` : ""}${place.author ? `<a href="${place.author}" target="_blank" rel="noopener">分享者 IG ↗</a>` : ""}${place.source ? `<a href="${place.source}" target="_blank" rel="noopener">貼文 ↗</a>` : ""}${place.custom ? `<button class="delete-place" type="button" data-delete="${placeIndex}">刪除</button>` : ""}`;
-        return `<article class="entry${isEvent ? " event" : ""}${isHotel ? " hotel" : ""}" data-id="${placeIndex}"><div class="entry-top"><h3>${escapeHtml(place.name)}</h3><span class="tag">${escapeHtml(place.category)}</span></div><p class="food">${escapeHtml(place.food)}</p><div class="details"><p>⌖ ${escapeHtml(place.district)} · ${escapeHtml(place.address)}</p><p>◷ ${escapeHtml(place.hours)}</p>${place.phone ? `<p>☎ ${escapeHtml(place.phone)}</p>` : ""}</div><div class="actions">${actions}</div></article>`;
+        const image = placeImages[place.name];
+        const isScreenshot = image?.includes("Screenshot") && place.name !== "台灣鯛魚燒";
+        const photo = image ? `<a class="place-photo${isScreenshot ? " ig-screenshot" : ""}" href="${escapeHtml(image)}" target="_blank" rel="noopener"><img class="place-image" src="${escapeHtml(image)}" alt="${escapeHtml(place.name)}照片" loading="lazy" decoding="async" width="400" height="300"></a>` : "";
+        return `<article class="entry${isEvent ? " event" : ""}${isHotel ? " hotel" : ""}" data-id="${placeIndex}"><div class="entry-top"><h3>${escapeHtml(place.name)}</h3><span class="tag">${escapeHtml(place.category)}</span></div>${photo}<p class="food">${escapeHtml(place.food)}</p><div class="details"><p>⌖ ${escapeHtml(place.district)} · ${escapeHtml(place.address)}</p><p>◷ ${escapeHtml(place.hours)}</p>${place.phone ? `<p>☎ ${escapeHtml(place.phone)}</p>` : ""}</div><div class="actions">${actions}</div></article>`;
       }).join("") : '<p class="empty">沒有符合條件的地點。</p>';
       document.getElementById("total-count").textContent = places.length;
       document.querySelectorAll(".entry").forEach((entry) => entry.addEventListener("mouseenter", () => highlight(Number(entry.dataset.id))));
